@@ -1,102 +1,73 @@
 from tkinter import *
 import random
 
-GRID_SIZE = 20 #  Размер поля
-SQUARE_SIZE = 20 # Размер клетки
-MINES_NUM = 40 # Количество мин на поле
-mines = set(random.sample(range(1, GRID_SIZE**2+1), MINES_NUM)) # Устанавливаем случайным образом мины на поле
-clicked = set() # Сет, хранящий все клетки, по которым мы кликнули
+GRID_SIZE = 20  
+SQUARE_SIZE = 20  
+MINES_NUM = 40   
+mines = set(random.sample(range(1, GRID_SIZE**2+1), MINES_NUM))  #распределение мин по полю
+clicked = set()  #уже открытые клетки
 
 
-def check_mines(neighbors):
-    """ Функция, возвращающая количество мин вокруг neighbors """
+def check_mines(neighbors):  #функция возвращает количество мин вокруг neighbors
     return len(mines.intersection(neighbors))
 
 
-def generate_neighbors(square):
-    """ Возвращает клетки соседствующие с square """
-    # Левая верхняя клетка
-    if square == 1:
+def generate_neighbors(square):  #возвращает соседние клетки с square
+    if square == 1:                                         #левая верхняя клетка
         data = {GRID_SIZE + 1, 2, GRID_SIZE + 2}
-    # Правая нижняя
-    elif square == GRID_SIZE ** 2:
+    elif square == GRID_SIZE ** 2:                          #правая нижняя
         data = {square - GRID_SIZE, square - 1, square - GRID_SIZE - 1}
-    # Левая нижняя
-    elif square == GRID_SIZE:
+    elif square == GRID_SIZE:                               #левая нижняя
         data = {GRID_SIZE - 1, GRID_SIZE * 2, GRID_SIZE * 2 - 1}
-    # Верхняя правая
-    elif square == GRID_SIZE ** 2 - GRID_SIZE + 1:
+    elif square == GRID_SIZE ** 2 - GRID_SIZE + 1:          #верхняя правая
         data = {square + 1, square - GRID_SIZE, square - GRID_SIZE + 1}
-    # Клетка в левом ряду
-    elif square < GRID_SIZE:
+    elif square < GRID_SIZE:                                #клетка в левом ряду
         data = {square + 1, square - 1, square + GRID_SIZE,
                 square + GRID_SIZE - 1, square + GRID_SIZE + 1}
-    # Клетка в правом ряду
-    elif square > GRID_SIZE ** 2 - GRID_SIZE:
+    elif square > GRID_SIZE ** 2 - GRID_SIZE:               #клетка в правом ряду
         data = {square + 1, square - 1, square - GRID_SIZE,
                 square - GRID_SIZE - 1, square - GRID_SIZE + 1}
-    # Клетка в нижнем ряду
-    elif square % GRID_SIZE == 0:
+    elif square % GRID_SIZE == 0:                           #клетка в нижнем ряду
         data = {square + GRID_SIZE, square - GRID_SIZE, square - 1,
                 square + GRID_SIZE - 1, square - GRID_SIZE - 1}
-    # Клетка в верхнем ряду
-    elif square % GRID_SIZE == 1:
+    elif square % GRID_SIZE == 1:                           #клетка в верхнем ряду
         data = {square + GRID_SIZE, square - GRID_SIZE, square + 1,
                 square + GRID_SIZE + 1, square - GRID_SIZE + 1}
-    # Любая другая клетка
-    else:
+    else:                                                   # Любая другая клетка
         data = {square - 1, square + 1, square - GRID_SIZE, square + GRID_SIZE,
                 square - GRID_SIZE - 1, square - GRID_SIZE + 1,
                 square + GRID_SIZE + 1, square + GRID_SIZE - 1}
     return data
 
 
-def clearance(ids):
-    """ Итеративная (эффективная) функция очистки поля """
-    clicked.add(ids) # добавляем нажатую клетку в сет нажатых
-    ids_neigh = generate_neighbors(ids) # Получаем все соседние клетки
-    around = check_mines(ids_neigh) # высчитываем количество мин вокруг нажатой клетки
-    c.itemconfig(ids, fill="green") # окрашиваем клетку в зеленый
+def clearance(ids):   #функция очистки поля
+    clicked.add(ids) 
+    ids_neigh = generate_neighbors(ids) 
+    around = check_mines(ids_neigh) 
+    c.itemconfig(ids, fill="green") 
 
-    # Если вокруг мин нету
-    if around == 0:
-        # Создаем список соседних клеток
+    if around == 0:                         #если вокруг мин нет
         neigh_list = list(ids_neigh)
-        # Пока в списке соседей есть клетки
         while len(neigh_list) > 0:
-            # Получаем клетку
             item = neigh_list.pop()
-            # Окрашиваем ее в зеленый цвет
             c.itemconfig(item, fill="green")
-            # Получаем соседение клетки данной клетки
             item_neigh = generate_neighbors(item)
-            # Получаем количество мин в соседних клетках
             item_around = check_mines(item_neigh)
-            # Если в соседних клетках есть мины
             if item_around > 0:
-                # Делаем эту проверку, чтобы писать по нескольку раз на той же клетке
+                #проверка
                 if item not in clicked:
-                    # Получаем координаты этой клетки
                     x1, y1, x2, y2 = c.coords(item)
-                    # Пишем на клетке количество мин вокруг
                     c.create_text(x1 + SQUARE_SIZE / 2,
                                   y1 + SQUARE_SIZE / 2,
                                   text=str(item_around),
                                   font="Arial {}".format(int(SQUARE_SIZE / 2)),
                                   fill='yellow')
-            # Если в соседних клетках мин нету
-            else:
-                # Добавляем соседние клетки данной клетки в общий список
+            else:    #если в соседних клетках мин нет
                 neigh_list.extend(set(item_neigh).difference(clicked))
-                # Убираем повторяющиеся элементы из общего списка
                 neigh_list = list(set(neigh_list))
-            # Добавляем клетку в нажатые
             clicked.add(item)
-    # Если мины вокруг есть
-    else:
-        # Высчитываем координаты клетки
+    else:                                   #если мины вокруг есть
         x1, y1, x2, y2 = c.coords(ids)
-        # Пишем количество мин вокруг
         c.create_text(x1 + SQUARE_SIZE / 2,
                       y1 + SQUARE_SIZE / 2,
                       text=str(around),
@@ -105,7 +76,7 @@ def clearance(ids):
 
 
 
-def click(event):
+def click(event):   #функция нажатия на клетку
     ids = c.find_withtag(CURRENT)[0]
     if ids in mines:
         c.itemconfig(CURRENT, fill="red")
@@ -117,25 +88,22 @@ def click(event):
 
 
 flags = set()
-def mark_mine(event):
+def mark_mine(event):  #функция довавления флага на преполагаемую мину
     ids = c.find_withtag(CURRENT)[0]
     if ids not in clicked:
-        #если клетка еще не отмечена флагом
-        if ids not in flags:
-            # Добавляем флаг
+        if ids not in flags:    #если клетка еще не отмечена флагом добавляем флаг
             x1, y1, x2, y2 = c.coords(ids)
             c.create_text(x1 + SQUARE_SIZE / 2, y1 + SQUARE_SIZE / 2, text='F',
                           font="Arial {}".format(int(SQUARE_SIZE / 2)), fill='black')
             flags.add(ids)
-        else:
-            # Убираем флаг
+        else:                   #убираем флаг   
             c.itemconfig(CURRENT, fill="gray")
             c.delete(c.find_withtag(CURRENT)[1])
             flags.remove(ids)
     check_win()
 
 
-def lose():
+def lose():        #функция проигрыша
     loseWindow = Tk()
     loseWindow.title('Вы проиграли:(')
     loseWindow.geometry('300x100')
@@ -144,11 +112,11 @@ def lose():
     loseWindow.mainloop()
 
 
-def check_win():
+def check_win():   #функция проверки победы
     if flags == mines:
         win()
 
-def win():
+def win():         #функция победы
     winWindow = Tk()
     winWindow.title('Вы выиграли!')
     winWindow.geometry('300x100')
@@ -161,8 +129,8 @@ def win():
 root = Tk()
 root.title("сапер")
 c = Canvas(root, width=GRID_SIZE * SQUARE_SIZE, height=GRID_SIZE * SQUARE_SIZE)
-c.bind("<Button-1>", click)
-c.bind("<Button-2>", mark_mine)
+c.bind("<Button-1>", click)       #нажатие левой кнопки мыши
+c.bind("<Button-3>", mark_mine)   #нажатие правой кнопки мыши (если у вас macOS нужно изменить на Button-2)
 c.pack()
 for i in range(GRID_SIZE):
     for j in range(GRID_SIZE):
